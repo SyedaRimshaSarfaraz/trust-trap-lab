@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRUST TRAP LAB</title>
+<style>
+:root{--bg:#0b1220;--panel:#111a2e;--panel2:#16223b;--line:#22304a;--txt:#e8eef5;--mut:#9fb0c6;--cy:#36d1e6;--am:#f7b84b;--red:#ff6b6b;--grn:#4ade80}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:"Segoe UI",system-ui,Arial,sans-serif;line-height:1.45}
+body{min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--cy)}
+#hud{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+#hud .brand{font-weight:800;letter-spacing:.06em}
+#hud .brand b{color:var(--cy)}
+#hud .meta{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:.92rem;color:var(--mut)}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 16px;min-height:42px}
+.btn:hover,.btn:focus-visible{border-color:var(--cy);outline:none}
+.btn.primary{background:var(--cy);color:#06202a;border-color:var(--cy);font-weight:700}
+.btn.sm{padding:5px 12px;min-height:34px;font-size:.9rem}
+.btn.danger{border-color:var(--red)}
+.skip{position:absolute;left:-999px}
+.skip:focus{left:8px;top:8px;background:#fff;color:#000;padding:8px;z-index:9}
+main{max-width:1280px;margin:0 auto;padding:20px}
+main:focus{outline:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+h1,h2,h3{line-height:1.15;margin:.2em 0 .4em}
+h1{font-size:clamp(2rem,5vw,3.4rem)}
+.tag{font-family:Consolas,"Courier New",monospace;font-size:.85rem;letter-spacing:.14em;color:var(--cy);text-transform:uppercase;margin:0}
+.muted{color:var(--mut)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+input[type=text]{background:#0a1020;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px 14px;min-height:42px;font:inherit}
+input[type=text]:focus{outline:2px solid var(--cy)}
+.labs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:16px}
+.lc{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.lc .ic{font-size:1.8rem}
+.lc.done{border-color:var(--grn)}
+.lc .st{font-size:.85rem;color:var(--mut)}
+.pbar{height:10px;background:#0a1020;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cy),var(--am));transition:width .4s}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:transparent;border:0;padding:9px 14px;min-height:42px}
+.seg button[aria-pressed=true]{background:var(--cy);color:#06202a;font-weight:700}
+/* LAB LAYOUT */
+.lab{display:grid;grid-template-columns:minmax(320px,5fr) 6fr;gap:16px;align-items:start}
+@media(max-width:900px){.lab{grid-template-columns:1fr}}
+.chat{display:flex;flex-direction:column;padding:0;overflow:hidden;height:min(78vh,760px)}
+.chead{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.chead .top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#phase{font-family:Consolas,monospace;font-size:.8rem;color:var(--am)}
+#log{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.m{display:flex;gap:8px;max-width:100%}
+.m .av{flex:none;width:30px;height:30px;border-radius:50%;background:var(--panel2);display:grid;place-items:center}
+.m .b{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;max-width:100%;overflow-wrap:anywhere}
+.m.you{justify-content:flex-end}.m.you .b{background:#0e3a46;border-color:var(--cy)}
+.m.good .b{border-color:var(--grn)}.m.bad .b{border-color:var(--red)}
+.div{align-self:center;font-family:Consolas,monospace;font-size:.78rem;color:var(--am);border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:4px 10px;margin:6px 0;text-align:center}
+.typing{opacity:.6}
+#ctrl{border-top:1px solid var(--line);padding:12px 16px;display:flex;flex-direction:column;gap:8px;min-height:68px}
+.opt{display:flex;gap:10px;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-height:44px;align-items:flex-start}
+.opt:hover:not(:disabled),.opt:focus-visible{border-color:var(--cy);outline:none}
+.opt:disabled{opacity:.55;cursor:not-allowed}
+.opt.good{border-color:var(--grn);opacity:1}.opt.bad{border-color:var(--red)}
+kbd{font-family:Consolas,monospace;background:#0a1020;border:1px solid var(--line);border-radius:5px;padding:0 6px;font-size:.8rem}
+.atk{display:flex;flex-direction:column;gap:6px;min-width:260px}
+.simb{background:#3a1f00;border:1px solid var(--am);color:var(--am);border-radius:8px;padding:5px 9px;font-size:.8rem;font-weight:700}
+.term{background:#050a14;border:1px solid #1d3b2a;border-radius:8px;padding:10px;font-family:Consolas,monospace;font-size:.85rem;color:#7dffb0;min-height:60px}
+/* GUI WINDOW */
+.guiw{padding:0;overflow:hidden;position:sticky;top:70px}
+@media(max-width:900px){.guiw{position:static}}
+.gbar{display:flex;gap:10px;align-items:center;padding:8px 14px;background:#1b2740;border-bottom:1px solid var(--line);font-size:.9rem}
+.gbar em{margin-left:auto;font-style:normal;color:var(--am);font-size:.75rem;font-weight:700;border:1px solid var(--am);border-radius:6px;padding:1px 7px}
+#gui{background:#eef2f7;color:#0b1220;padding:16px;min-height:420px}
+#gui .page{background:#fff;border:1px solid #d5dde8;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+#gui h3{margin:0;font-size:1.15rem}
+#gui p{margin:.2em 0}
+#gui small{color:#475569}
+.t{display:block;width:100%;text-align:left;background:transparent;border:2px dashed transparent;border-radius:10px;padding:8px 10px;color:inherit;cursor:pointer;min-height:40px}
+.t:hover,.t:focus-visible{border-color:#0b8aa0;outline:none;background:#e6f7fa}
+.t.ok{border:2px solid #16a34a;background:#dcfce7;pointer-events:none}
+.t.bad{border:2px solid #dc2626;background:#fee2e2}
+.t.reveal{border:2px solid #d97706;background:#fef3c7}
+.t.btn{display:inline-block;width:auto;background:#0b1220;color:#fff;border:2px solid #0b1220;padding:8px 16px}
+.t.btn.alt{background:#fff;color:#0b1220}
+.t.btn:hover{background:#0b6e7e;border-color:#0b6e7e;color:#fff}
+.t.ok.btn{background:#16a34a;border-color:#16a34a;color:#fff}
+.poster{background:#fffbe6;border:3px solid #0b1220;border-radius:6px;padding:12px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
+.poster .t{text-align:center}
+.qr{width:150px;height:150px;background:#fff;padding:6px;border:1px solid #333;margin:0 auto}
+.phone{max-width:340px;margin:0 auto;background:#0b1220;color:#fff;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.phone .t{background:#16223b;color:#fff}
+.phone .t:hover{background:#1e3050;color:#fff}
+.url{font-family:Consolas,monospace;word-break:break-all;font-size:.9rem}
+.chk{display:inline-block;width:22px;height:22px;border:2px solid #666;border-radius:4px;vertical-align:middle;margin-right:6px}
+.pop{border:1px solid #888;border-radius:10px;background:#f7f7f7;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+.video{background:#111;color:#fff;height:90px;border-radius:8px;display:grid;place-items:center;font-size:2rem}
+.site{display:flex;align-items:center;gap:10px;justify-content:space-between;border-bottom:1px solid #e2e8f0;padding:6px 0;flex-wrap:wrap}
+.site em{font-style:normal;color:#166534;font-weight:700}
+.perm{display:flex!important;justify-content:space-between;align-items:center;gap:10px}
+.perm small{display:block}
+.sw{flex:none;width:46px;height:24px;border-radius:99px;background:#16a34a;position:relative}
+.sw::after{content:"";position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+.t.ok .sw{background:#94a3b8}.t.ok .sw::after{right:25px}
+.files .t{display:flex;gap:10px;align-items:center;font-family:Consolas,monospace}
+.ext{border:1px solid #cbd5e1;border-radius:10px;padding:8px}
+.fine{font-size:.82rem;color:#475569}
+/* report */
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left}
+.badge{display:inline-block;border-radius:99px;padding:3px 12px;font-weight:700;background:var(--am);color:#2a1a00}
+.big{font-size:3.6rem;font-weight:800;color:var(--cy);line-height:1}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:800px){.two{grid-template-columns:1fr}}
+.cert{background:#fffdf5;color:#1a1a2e;border:8px double #6b3fd4;border-radius:10px;padding:34px;text-align:center}
+.cert .nm{font-size:2.2rem;font-weight:800;border-bottom:2px solid #6b3fd4;display:inline-block;padding:0 20px;margin:8px 0}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#fff;color:#000;padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:.3s;z-index:20}
+#toast.on{opacity:1}
+footer{text-align:center;color:var(--mut);font-size:.82rem;padding:20px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{body *{visibility:hidden}#cert,#cert *{visibility:visible}#cert{position:absolute;left:0;top:0;width:100%}}
+</style>
+</head>
+<body>
+<a class="skip" href="#screen">Skip to content</a>
+<header id="hud">
+  <div class="brand">TRUST TRAP <b>LAB</b></div>
+  <div class="meta"><span id="hudName">No player yet</span><span id="hudProg"></span><button class="btn sm" data-act="home">🏠 Mission map</button></div>
+</header>
+<main id="screen" tabindex="-1"></main>
+<footer>Everything here is a simulation. No real passwords, files, permissions or commands are used and nothing leaves this computer.</footer>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+(function () {
+'use strict';
+const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+/* ---------- storage (works even if localStorage is blocked) ---------- */
+const mem = {};
+function sget(k, d) { let raw = null; try { raw = localStorage.getItem(k); } catch (e) {} if (raw === null && k in mem) raw = mem[k]; if (raw === null) return d; try { return JSON.parse(raw); } catch (e) { return d; } }
+function sset(k, v) { const raw = JSON.stringify(v); mem[k] = raw; try { localStorage.setItem(k, raw); } catch (e) {} }
+const SKEY = 'ttlab.v3', LBKEY = 'ttlab.v3.lb';
+const cleanNick = s => String(s || '').replace(/[^\p{L}\p{N} _-]/gu, '').trim().slice(0, 16);
+let S = {nick: '', track: 'full', labs: {}, saved: false};
+(function load() { const o = sget(SKEY, null); if (o && typeof o === 'object') { S.nick = cleanNick(o.nick); S.track = o.track === 'quick' ? 'quick' : 'full'; S.labs = (o.labs && typeof o.labs === 'object') ? o.labs : {}; S.saved = !!o.saved; } })();
+const save = () => sset(SKEY, S);
+const loadLB = () => { const a = sget(LBKEY, []); return Array.isArray(a) ? a : []; };
+function toast(m, ms) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), ms || 2600); }
+const rankOf = n => n >= 90 ? 'Human Firewall' : n >= 70 ? 'Threat Hunter' : n >= 50 ? 'Cyber Rookie' : 'Easy Target';
+
+/* ---------- tiny helpers to write lab steps ---------- */
+const P1 = 'Phase 1 · Spot the trap (awareness)', P2 = 'Phase 2 · Defend while under attack', P3 = 'Phase 3 · Recover after compromise';
+const ph = t => ({k: 'ph', t});
+const say = (t, o) => Object.assign({k: 'say', t}, o);
+const task = (t, target, o) => Object.assign({k: 'task', t, target: [].concat(target)}, o);
+const mcq = (q, opts, a, why, o) => Object.assign({k: 'mcq', q, opts, a, why}, o);
+const atk = (title, lines) => ({k: 'atk', title, lines});
+
+function qrSvg() {
+  let x = 4242, r = '', n = 21, s = 7;
+  const rnd = () => { x = (x * 1103515245 + 12345) & 0x7fffffff; return x / 0x7fffffff; };
+  const fin = (a, b) => { for (const [oa, ob] of [[0, 0], [0, 14], [14, 0]]) { const u = a - oa, v = b - ob; if (u >= 0 && u < 7 && v >= 0 && v < 7) return (u === 0 || u === 6 || v === 0 || v === 6 || (u >= 2 && u <= 4 && v >= 2 && v <= 4)) ? 1 : 0; } return -1; };
+  for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) { let f = fin(a, b); const on = f === -1 ? rnd() > 0.5 : f === 1; if (on) r += '<rect x="' + b * s + '" y="' + a * s + '" width="' + s + '" height="' + s + '"/>'; }
+  return '<svg class="qr" viewBox="0 0 147 147" role="img" aria-label="Pretend QR code" fill="#111">' + r + '</svg>';
+}
+
+/* ---------- THE LABS ---------- */
+const LABS = [
+{ id:'qr', icon:'📷', name:'QR Phishing Poster', blurb:'A poster promises Wi-Fi, a certificate and a parcel. Inspect it and respond.', title:'Campus noticeboard (simulated)',
+  sum:['A QR code hides its destination, so read the full address before opening.','Never log in or install certificates from a QR page.','Report suspicious posters to IT.'],
+  screens:{
+   poster:()=>`<div class="poster"><button class="t" data-t="title"><b>⚠ CAMPUS NOTICE</b></button><button class="t" data-t="promises"><h3>FREE CAMPUS WI-FI</h3><p>Certificate update required<br>Parcel #TT-4471 is held at the gate</p></button><button class="t" data-t="qr" aria-label="QR code">${qrSvg()}</button><button class="t" data-t="footer"><small>No name • No contact • No date</small></button></div>`,
+   scan:()=>`<div class="phone"><b>📱 Camera found a link</b><p class="url">http://campus-wifi-verify.example/connect?src=poster</p><p style="font-size:.9rem">The page says: “Your certificate expired. Sign in and install the profile to stay connected.”</p><button class="t" data-t="open">Open the link and sign in with my student login</button><button class="t" data-t="cert">Install the “security certificate”</button><button class="t" data-t="report">Do not open it - report the poster to IT</button></div>`},
+  steps:[
+   ph(P1),
+   say('Welcome, {nick}. I’m <b>TRAP-BOT</b>, your lab guide. On the right is a poster from a noticeboard. Everything is harmless and simulated. Let’s investigate it together.',{screen:'poster'}),
+   task('<b>Task 1:</b> Click the detail that shows nobody is accountable for this poster.','footer',{hint:'Look at the small print at the bottom.',info:{footer:'No name, no contact, no date: nobody can be held responsible.',promises:'Three unrelated promises are suspicious too, but this task asks about accountability.',qr:'A QR code looks the same whether it is safe or not - that is the problem.',title:'An official-sounding title costs nothing to print.'}}),
+   mcq('A QR code hides its destination. What should you read before opening a scanned link?',['Only the page title after it loads','The full web address your phone previews','How many people already scanned it'],1,'Your phone previews the full address. Check it <i>before</i> opening anything.'),
+   atk('How the attacker builds this poster',['[SIM] Step 1: print a poster stacking three tempting promises','[SIM] Step 2: place it where students gather and cover the real notice','[SIM] Step 3: the code opens a look-alike “campus IT” page','[SIM] Possible impact: stolen login or a rogue certificate']),
+   ph(P2),
+   say('Now imagine you scanned it. The phone shows a page demanding action. Choose the safe response.',{screen:'scan'}),
+   task('<b>Task 2:</b> Click the safest action.','report',{hint:'Which option involves neither typing a password nor installing anything?',info:{open:'That hands your login to the attacker.',cert:'A rogue certificate can weaken the protection of your browsing.',report:'Reporting protects you and everyone else who sees that poster.'}}),
+   ph(P3),
+   mcq('Recovery: you already typed your student password on that page. What do you do first?',['Wait and see if anything happens','Change the password from a different, clean device and tell IT','Clear the browser history'],1,'A clean device cannot leak the new password. Telling IT lets them warn others.')
+  ]},
+{ id:'captcha', icon:'🤖', name:'Fake CAPTCHA', blurb:'A “verify you are human” box asks you to press keys. Why is that wrong?', title:'verify-human-check.example (simulated)',
+  sum:['A real CAPTCHA never asks you to paste or run anything outside the page.','Close the tab and tell IT.','If you followed the steps: disconnect and report immediately.'],
+  screens:{ page:()=>`<div class="page"><button class="t" data-t="box"><span class="chk"></span><b>I’m not a robot</b> <small>CAPTCHA</small></button><h3>Verification failed - manual step required</h3><button class="t" data-t="steps"><ol><li>Press <kbd>Win</kbd> + <kbd>R</kbd></li><li>Press <kbd>Ctrl</kbd> + <kbd>V</kbd> (a “verification code” was silently copied)</li><li>Press <kbd>Enter</kbd></li></ol></button><div class="row"><button class="t btn" data-t="follow">Follow the steps</button><button class="t btn alt" data-t="close">Close this tab</button></div><p class="fine">SIMULATION: nothing is copied and nothing can run.</p></div>`},
+  steps:[
+   ph(P1),
+   say('This page looks like a normal human check. One part of it is the trap.',{screen:'page'}),
+   task('<b>Task 1:</b> Click the part that asks you to do something <u>outside</u> the web page.','steps',{hint:'Keyboard shortcuts that open system windows.',info:{steps:'Right. A website must never tell you to open system windows and paste.',box:'The checkbox is normal. The danger is in what comes next.'}}),
+   mcq('Why is following those three steps dangerous?',['It tests your typing speed','You would run text the attacker prepared, with your own permissions','It updates your browser'],1,'You become the one who runs the attacker’s text, often to install an info-stealer.'),
+   atk('How the attacker builds this',['[SIM] Step 1: copy or hack a normal-looking website','[SIM] Step 2: add a fake “Verify you are human” box','[SIM] Step 3: silently place the attacker’s text on your clipboard','[SIM] Step 4: wait for you to paste and press Enter yourself']),
+   ph(P2),
+   say('A real CAPTCHA only needs clicks inside the page. You decide:'),
+   task('<b>Task 2:</b> Click the safe action.','close',{hint:'You do not have to “pass” this page.',info:{follow:'That is exactly what the attacker wants.',close:'Safe. Tell IT too, so the site can be blocked.'}}),
+   ph(P3),
+   mcq('Recovery: you already followed the steps and the laptop feels slow. What is the first move?',['Keep working and see what happens','Disconnect from the network, do not sign in to anything, tell IT','Sign in to email to check for damage'],1,'Cutting the connection can stop data leaving. Signing in on a possibly infected device can hand over passwords.')
+  ]},
+{ id:'notif', icon:'🔔', name:'Notification Trap', blurb:'“Click Allow to prove you are not a robot.” Then scam alerts follow.', title:'free-movies-stream.example (simulated)',
+  sum:['No site needs notifications to play a video.','Block, and review allowed sites in browser settings.','Never call numbers shown in pop-up alerts.'],
+  screens:{
+   popup:()=>`<div class="page"><div class="video" aria-hidden="true">▶</div><div class="pop"><b>free-movies-stream.example wants to</b><br>🔔 Show notifications<p>Click <b>Allow</b> to prove you are not a robot and start the video.</p><div class="row"><button class="t btn" data-t="allow">Allow</button><button class="t btn alt" data-t="block">Block</button></div></div></div>`,
+   settings:()=>`<div class="page"><h3>Settings › Site settings › Notifications</h3><div class="site"><span>calendar.example</span><em>Allowed</em><button class="t btn sm" data-t="rev-cal">Remove</button></div><div class="site"><span>free-movies-stream.example</span><em>Allowed</em><button class="t btn sm" data-t="rev-scam">Remove</button></div><div class="site"><span>school-news.example</span><em>Allowed</em><button class="t btn sm" data-t="rev-news">Remove</button></div></div>`},
+  steps:[
+   ph(P1),
+   say('A movie site shows a video and a pop-up on top of it.',{screen:'popup'}),
+   mcq('Does a website need notification permission to play a video?',['Yes, otherwise the video cannot load','No. The two have nothing to do with each other','Only on Windows'],1,'The “robot check” is just a disguise for a permission request.'),
+   atk('What the attacker gains if you click Allow',['[SIM] A channel to push alerts to your desktop, even on other tabs','[SIM] Fake “Virus found!” and “Parcel fee due” messages','[SIM] Each alert links to a scam page']),
+   ph(P2),
+   task('<b>Task 1:</b> Click the safe choice on the pop-up.','block',{hint:'Blocking costs you nothing.',info:{allow:'That gives the attacker a way to message you.',block:'Correct. Closing the tab would also be fine.'}}),
+   ph(P3),
+   say('Weeks later you notice scam alerts appearing. Open the site settings and clean up.',{screen:'settings'}),
+   task('<b>Task 2:</b> Remove the permission that is causing the scam alerts.','rev-scam',{hint:'Which site do you not recognise?',info:{'rev-cal':'You use this calendar. Leave it.','rev-news':'Check before removing things you use.','rev-scam':'That is the source of the scam alerts.'}}),
+   mcq('A pop-up shouts “Virus found - call support now!”. What do you do?',['Call the number quickly','Ignore it, do not call, and block the site','Pay the “fee” to be safe'],1,'The number leads to a scammer who wants money or remote access.')
+  ]},
+{ id:'perm', icon:'🧩', name:'App Permissions', blurb:'A free photo editor wants your email, files and contacts. Apply least privilege.', title:'SnapGlow consent screen (fictional)',
+  sum:['Grant the minimum: a photo editor needs photos only.','Revoke old app access in your account’s connected-apps page.','Uninstalling an app does not cancel the access you granted.'],
+  screens:{
+   consent:()=>`<div class="page"><h3>SnapGlow needs the following access</h3><p class="fine">Click a permission to switch it OFF.</p><button class="t perm" data-t="photos"><span>📷 <b>Selected photos</b><small>To edit pictures you choose</small></span><i class="sw"></i></button><button class="t perm" data-t="mail"><span>✉️ <b>Read, send and delete all your email</b><small>“To share your edits”</small></span><i class="sw"></i></button><button class="t perm" data-t="files"><span>📁 <b>All files and cloud drive</b><small>“To back up your work”</small></span><i class="sw"></i></button><button class="t perm" data-t="contacts"><span>👥 <b>Your contacts</b><small>“To find friends”</small></span><i class="sw"></i></button></div>`,
+   apps:()=>`<div class="page"><h3>Account › Connected apps</h3><div class="site"><span>Calendar sync</span><em>Read calendar</em><button class="t btn sm" data-t="rv-cal">Revoke</button></div><div class="site"><span>SnapGlow Photo Editor</span><em>Mail, files, contacts</em><button class="t btn sm" data-t="rv-snap">Revoke</button></div><div class="site"><span>Maps</span><em>Location</em><button class="t btn sm" data-t="rv-maps">Revoke</button></div></div>`},
+  steps:[
+   ph(P1),
+   say('You installed a free photo editor. Its first screen has every permission ON.',{screen:'consent'}),
+   task('<b>Task 1:</b> Switch OFF every permission a photo editor does not need. (Three of them.)',['mail','files','contacts'],{all:true,hint:'Keep only the one that matches the app’s purpose.',info:{photos:'A photo editor needs photos. Leave this ON.',mail:'A photo editor has no reason to read your email.',files:'Access to all files is far too broad.',contacts:'Contacts let attackers target your friends.'}}),
+   mcq('Why is “consent phishing” dangerous?',['It steals the password you type','The app reads your data with an access token, no password needed','It slows down your phone'],1,'Once you approve, access continues until you revoke it.'),
+   atk('Attacker’s view of consent phishing',['[SIM] Step 1: publish a handy free app','[SIM] Step 2: pre-tick every permission on the consent screen','[SIM] Step 3: after approval, read mail and files with a token','[SIM] Possible impact: convincing follow-up phishing sent from your account']),
+   ph(P2),
+   say('You approved it anyway. Your account page now shows what the app can do. Cut its access now.',{screen:'apps'}),
+   task('<b>Task 2:</b> Revoke the correct app.','rv-snap',{hint:'Which app asked for mail and files?',info:{'rv-cal':'You use this one on purpose.','rv-maps':'Not the problem here.','rv-snap':'Correct. Uninstalling alone would not have cancelled this access.'}}),
+   ph(P3),
+   mcq('Recovery: you find a mail-forwarding rule you never created. What next?',['Leave it, probably a normal setting','Delete the rule, sign out everywhere and change your password','Reply to the sender'],1,'Attackers leave rules behind as a backdoor.')
+  ]},
+{ id:'url', icon:'🔗', name:'URL Inspector', blurb:'Four links, three are fake. Learn to read a domain like an investigator.', title:'Mail: “Your results are ready” (simulated)',
+  sum:['Read the domain right to left: the real owner is just before the ending.','Watch for subdomain tricks, look-alike letters and the “@” trick.','Open important sites from your bookmark.'],
+  screens:{
+   links:()=>`<div class="page"><p><b>Subject:</b> Your results are ready</p><button class="t" data-t="l1"><span class="url">https://portal.university.example/results</span></button><button class="t" data-t="l2"><span class="url">https://university.example.results-check.example/login</span></button><button class="t" data-t="l3"><span class="url">https://portal.univercity.example/results</span></button><button class="t" data-t="l4"><span class="url">http://university.example@login-secure.example/</span></button></div>`,
+   mail:()=>`<div class="page"><p><b>From:</b> results@university.example</p><p>Your results are ready. Click the link or open your portal.</p><div class="row"><button class="t btn" data-t="click">Click the link in the email</button><button class="t btn alt" data-t="bookmark">Open my saved bookmark instead</button><button class="t btn alt" data-t="fwd">Forward it to friends</button></div></div>`},
+  steps:[
+   ph(P1),
+   say('Four links, one real. Click all three <b>suspicious</b> ones.',{screen:'links'}),
+   task('<b>Task 1:</b> Click every suspicious link (3).',['l2','l3','l4'],{all:true,hint:'Read each address from right to left, and check every letter.',info:{l1:'The real owner (before .example) is university. This one is consistent.',l2:'Subdomain trick: the real owner is results-check.example, not university.',l3:'“univercity” is a look-alike spelling.',l4:'The “@” trick: everything before @ is ignored, the real host is login-secure.example. It is also not https.'}}),
+   mcq('Where is the real owner of a domain?',['At the very beginning','Just before the final ending (the last two parts)','Anywhere in the text'],1,'Read right to left: the part just before the ending is the owner.'),
+   atk('Attacker’s view of a look-alike link',['[SIM] Step 1: register a look-alike domain','[SIM] Step 2: copy the real login page onto it','[SIM] Step 3: email an urgent link','[SIM] Possible impact: login stolen, then forwarded to the real site so you notice nothing']),
+   ph(P2),
+   say('The email arrives. Choose the most reliable defence.',{screen:'mail'}),
+   task('<b>Task 2:</b> What is the safest way in?','bookmark',{hint:'Skip guessing completely.',info:{click:'No URL check can guarantee a link is safe.',fwd:'That spreads the risk to your friends.',bookmark:'Correct. Your own bookmark skips the whole guessing game.'}}),
+   ph(P3),
+   mcq('Recovery: you typed your login on a look-alike page. What is the right set of actions?',['Nothing, the real site loaded afterwards','Change the password on the official site, sign out everywhere, check MFA and recovery settings, report it','Use the same new password everywhere'],1,'Sign out sessions and check recovery settings so the attacker cannot return.')
+  ]},
+{ id:'cookies', icon:'🍪', name:'Cookies & Session Hijacking', blurb:'A “Session Helper” extension quietly copies the wristband that proves you are logged in.', title:'Browser extensions and account security (simulated)',
+  sum:['A session cookie is a wristband: whoever holds it is treated as you.','Install few extensions and check what they can read.','Sign out of all devices and change passwords from a clean device.'],
+  screens:{
+   ext:()=>`<div class="page"><h3>Extensions</h3><div class="ext"><b>Session Helper</b> <small>(from a free PDF site)</small><button class="t" data-t="perm-bad">Can: <b>read and change all your data on all websites</b></button><button class="t btn sm" data-t="rm-bad">Remove</button></div><div class="ext"><b>Dark Reader PDF</b><button class="t" data-t="perm-ok">Can: read this one site only</button><button class="t btn sm" data-t="rm-ok">Remove</button></div></div>`,
+   acct:()=>`<div class="page"><h3>Account › Security</h3><p class="fine">Alert: “New sign-in from another country”.</p><div class="row"><button class="t btn" data-t="theme">Change theme</button><button class="t btn" data-t="photo">Update profile photo</button><button class="t btn" data-t="signout">Sign out of all devices</button></div></div>`},
+  steps:[
+   ph(P1),
+   say('A cookie banner offered a “Session Helper” extension so you never have to log in again.',{screen:'ext'}),
+   task('<b>Task 1:</b> Click the permission that makes an extension risky.','perm-bad',{hint:'Which one can see every website you visit?',info:{'perm-ok':'Limited to one site. Much lower risk.','perm-bad':'That permission can see your logged-in sessions on every site.'}}),
+   mcq('What can an attacker do with a stolen session cookie?',['Nothing without your password','Act as you, sometimes without a password or MFA prompt','Only see your history'],1,'That is why “remember me everywhere” helpers are risky.'),
+   atk('Attacker’s view of session hijacking',['[SIM] Step 1: offer a “free tool” plus a helper extension','[SIM] Step 2: the extension copies your session cookies','[SIM] Step 3: replay them from another computer','[SIM] Possible impact: access treated as you, no password needed']),
+   ph(P2),
+   say('You suddenly get a “new sign-in from another country” alert. Contain it.',{screen:'ext'}),
+   task('<b>Task 2:</b> Remove the extension that caused this.','rm-bad',{hint:'Remove the one with the broad permission.',info:{'rm-ok':'That one is limited. Remove the risky one first.','perm-bad':'Right idea, now press its Remove button.','perm-ok':'Not the risky one.','rm-bad':'Removed. The leak source is gone.'}}),
+   say('Next, end the stolen sessions.',{screen:'acct'}),
+   task('<b>Task 3:</b> Make stolen cookies useless.','signout',{hint:'Which action ends every logged-in session?',info:{theme:'Cosmetic only.',photo:'Not related.',signout:'Ending every session makes stolen session cookies useless.'}}),
+   ph(P3),
+   mcq('Recovery: where should you change your passwords now?',['In the same browser, quickly','From a clean device, then turn on app-based MFA','Reply to the alert email with your password'],1,'On a compromised browser the new password could be copied too.')
+  ]},
+{ id:'bt', icon:'📶', name:'Bluetooth Hijacking', blurb:'An unknown device asks to pair on a crowded train. What do you tap?', title:'Phone Bluetooth (simulated)',
+  sum:['Attackers must be physically near, so keep Bluetooth off when unused.','Decline pairing requests you did not start.','Forget unknown devices and install updates.'],
+  screens:{
+   pair:()=>`<div class="phone"><b>📶 Bluetooth ON · Discoverable</b><div class="pop" style="color:#0b1220"><b>Pairing request</b><p>“Free-Speaker-7” wants to pair.<br>Code: 0000</p><p class="fine">☑ Allow access to contacts and messages</p></div><button class="t" data-t="accept">Accept</button><button class="t" data-t="once">Accept just once to see what it is</button><button class="t" data-t="decline">Decline</button></div>`,
+   settings:()=>`<div class="phone"><b>Bluetooth settings</b><button class="t" data-t="bt-off">Bluetooth: ON (tap to turn off)</button><div class="site" style="color:#fff"><span>AirBuds Pro (yours)</span><button class="t btn sm alt" data-t="f-mine">Forget</button></div><div class="site" style="color:#fff"><span>Free-Speaker-7 (unknown)</span><button class="t btn sm alt" data-t="f-bad">Forget</button></div></div>`},
+  steps:[
+   ph(P1),
+   say('You are on a crowded train. A pairing request appears that you did not start.',{screen:'pair'}),
+   mcq('Why does a Bluetooth attacker usually have to be physically close?',['Bluetooth has a short range','Bluetooth needs Wi-Fi','Attackers like trains'],0,'Short range means the attacker must be nearby. Turning Bluetooth off removes the path.'),
+   atk('Attacker’s view of rogue pairing',['[SIM] Step 1: stand in a crowd and look for discoverable phones','[SIM] Step 2: send a pairing request with a friendly name','[SIM] Step 3: hope for a tap on Accept','[SIM] Possible impact: unwanted files or data access on old or unpatched devices']),
+   ph(P2),
+   task('<b>Task 1:</b> Respond to the pairing request.','decline',{hint:'You did not start any pairing.',info:{accept:'You did not request this connection.',once:'One tap is enough to create a trusted pairing.',decline:'Correct. An unrequested pairing is a warning sign.'}}),
+   say('But suppose you had accepted, and files you did not choose are arriving. Act now.',{screen:'settings'}),
+   task('<b>Task 2:</b> Stop the connection first.','bt-off',{hint:'What breaks the link right away?',info:{'f-mine':'That is your own device.','f-bad':'Good idea, but first cut the link.','bt-off':'Right. No Bluetooth, no connection.'}}),
+   task('<b>Task 3:</b> Now remove the unknown device so it cannot reconnect.','f-bad',{hint:'The unknown one.',info:{'f-mine':'That is yours, keep it.','f-bad':'Forgotten. It cannot reconnect later.'}}),
+   ph(P3),
+   mcq('Recovery: what else should you do afterwards?',['Open the received files to check them','Install updates, review app permissions and run a security scan','Nothing'],1,'Updates fix weaknesses; checks catch leftovers. Never open unknown received files.')
+  ]},
+{ id:'apk', icon:'📱', name:'Pirated Game (APK)', blurb:'“Unlocked, No Ads” game mods hide malware. Spot the red flags.', title:'free-game-zone.example (simulated)',
+  sum:['Install apps only from official stores.','Never turn off “install unknown apps” protection for a download site.','If installed: uninstall, scan, change passwords from a clean device.'],
+  screens:{
+   site:()=>`<div class="page"><h3>Mega Racing 3 PRO - Unlocked, No Ads (.apk)</h3><button class="t" data-t="claim">⭐ 4.9 · “100% safe, virus free!”</button><button class="t" data-t="unk"><b>Step 1:</b> allow “Install unknown apps” on your phone</button><button class="t" data-t="dl">⬇ DOWNLOAD NOW</button><p class="fine">SIMULATION: nothing is downloaded.</p></div>`,
+   prompt:()=>`<div class="phone"><b>The game asks for permissions</b><button class="t" data-t="allow">Allow SMS, accessibility and overlay</button><button class="t" data-t="deny">Deny all</button></div>`,
+   phone:()=>`<div class="phone"><b>Battery draining, ads everywhere</b><button class="t" data-t="cache">Clear the app’s cache and keep playing</button><button class="t" data-t="uninstall">Uninstall the app and run a security scan</button><button class="t" data-t="ignore">Ignore it</button></div>`},
+  steps:[
+   ph(P1),
+   say('You want a paid game for free. A site offers a modded APK.',{screen:'site'}),
+   task('<b>Task 1:</b> Click the two red flags.',['claim','unk'],{all:true,hint:'One is a claim the site makes about itself, the other asks you to lower your phone’s protection.',info:{dl:'The button itself is not the clue - what comes before it is.',claim:'A site vouching for its own safety proves nothing.',unk:'Switching off your phone’s install protection is a big red flag.'}}),
+   mcq('Where should you get games from?',['The official store or the official publisher','Any site with high ratings','A friend’s forwarded link'],0,'Official stores check apps. They are not perfect, but your protection stays on.'),
+   atk('Attacker’s view of a pirated game',['[SIM] Step 1: take a popular game and add hidden code','[SIM] Step 2: re-upload it as “Unlocked, No Ads”','[SIM] Step 3: ask for SMS, accessibility and overlay access','[SIM] Possible impact: stolen one-time codes and fake bank screens']),
+   ph(P2),
+   say('You installed it. Now it asks for dangerous permissions.',{screen:'prompt'}),
+   task('<b>Task 2:</b> Click the right response.','deny',{hint:'A game does not need to read your SMS.',info:{allow:'That gives malware what it needs.',deny:'Correct. Deny, and prepare to remove the app.'}}),
+   ph(P3),
+   say('The phone is misbehaving. Clean up.',{screen:'phone'}),
+   task('<b>Task 3:</b> Pick the real fix.','uninstall',{hint:'Clearing a cache does not remove malware.',info:{cache:'A cache clear does not remove malware.',ignore:'Waiting only helps the attacker.',uninstall:'Correct. Then change passwords from a clean device.'}}),
+   mcq('Recovery: you use banking apps. What else?',['Nothing','Change passwords from a clean device and tell your bank','Reinstall the same game'],1,'Codes and logins may have been exposed; your bank can add protection.')
+  ]},
+{ id:'torrent', icon:'🎬', name:'Pirated Movie (Torrent)', blurb:'A “free new movie” comes with a required player. Why is that the trap?', title:'torrent-hub.example (simulated)',
+  sum:['A video never needs an installer. A required “player” is malware.','Torrenting also exposes your IP address and breaks the law in many places.','Use legal streaming, library or free ad-supported services.'],
+  screens:{
+   files:()=>`<div class="page files"><h3>NewBlockbuster.2026.1080p.WEB-DL · 3.2 GB</h3><p class="fine">Uploader “VIP_trusted_99” (account created yesterday)</p><button class="t" data-t="mkv">🎞 NewBlockbuster.2026.1080p.mkv</button><button class="t" data-t="exe">⚙ HD-Player-Required-Setup.exe</button><button class="t" data-t="txt">📄 README_FIRST.txt: “Run the player setup first.”</button></div>`,
+   choices:()=>`<div class="page"><h3>What do you do?</h3><button class="t btn" data-t="run">Download it and run the HD Player setup</button><button class="t btn" data-t="only">Download but only open the video</button><button class="t btn alt" data-t="legal">Use a legal streaming service or library</button></div>`},
+  steps:[
+   ph(P1),
+   say('A brand-new film is not on your streaming apps. A torrent site has it.',{screen:'files'}),
+   task('<b>Task 1:</b> Click the two items that do not belong with a movie.',['exe','txt'],{all:true,hint:'A video does not need a program, or instructions to run one.',info:{mkv:'This is the video the title promises.',exe:'A program inside a “movie” download is the trap.',txt:'The note pushes you to run the program.'}}),
+   mcq('Does a video file ever need an installer to play?',['Yes, for HD','No. A required “player” is the malware','Only for 4K'],1,'Any video player you need is already on your device or from an official source.'),
+   atk('Attacker’s view of a torrent trap',['[SIM] Step 1: upload a “new movie” with thousands of fake seeders','[SIM] Step 2: bundle a “required player”','[SIM] Step 3: wait for the user to run it','[SIM] Possible impact: password stealer or miner; your IP address is also visible to other downloaders']),
+   ph(P2),
+   say('Make your choice.',{screen:'choices'}),
+   task('<b>Task 2:</b> Click the safest option.','legal',{hint:'The one that removes both the malware and the legal risk.',info:{run:'That runs the attacker’s software.',only:'Better, but files can be disguised and torrenting exposes your IP address.',legal:'Correct. Legal sources remove malware, legal and privacy risks.'}}),
+   ph(P3),
+   mcq('Recovery: you ran the setup. The PC’s fans spin loudly. What is the right order?',['Run the installer again','Disconnect, delete the files and scan or ask IT, then change passwords from a clean device','Install the “free cleaner” from the pop-up'],1,'Stop data leaving, remove the source, and assume saved logins were taken.')
+  ]}
+];
+const QUICK = ['qr', 'captcha', 'cookies', 'bt'];
+const activeLabs = () => S.track === 'quick' ? LABS.filter(l => QUICK.includes(l.id)) : LABS;
+const doneCount = () => activeLabs().filter(l => S.labs[l.id] && S.labs[l.id].done).length;
+const allDone = () => doneCount() === activeLabs().length;
+const overall = () => { const a = activeLabs(); return a.length ? Math.round(a.reduce((s, l) => s + ((S.labs[l.id] && S.labs[l.id].score) || 0), 0) / a.length) : 0; };
+
+/* ---------- screens ---------- */
+const view = html => { $('#screen').innerHTML = html; };
+function hud() {
+  $('#hudName').textContent = S.nick ? '👤 ' + S.nick : 'No player yet';
+  $('#hudProg').textContent = 'Labs ' + doneCount() + '/' + activeLabs().length + ' · Score ' + (doneCount() ? overall() : 0);
+}
+function focusMain() { const m = $('#screen'); m.focus({preventScroll: true}); window.scrollTo(0, 0); }
+
+function rHome() {
+  leaveLab();
+  const L = activeLabs();
+  view(`<section class="card"><p class="tag">Guided cyber-security lab</p><h1>TRUST TRAP LAB</h1>
+    <p class="muted">Work through hands-on rooms with <b>TRAP-BOT</b>. In each lab you inspect a simulated tool on the right, answer questions on the left, see the attacker’s side (concept level only), then defend and recover.</p>
+    <label for="nick"><b>Your nickname</b> (not your real name)</label>
+    <div class="row"><input id="nick" type="text" maxlength="16" autocomplete="off" placeholder="e.g. NightOwl" value="${esc(S.nick)}">
+    <span class="seg" role="group" aria-label="Track"><button data-act="track" data-v="full" aria-pressed="${S.track === 'full'}">Full track (9 labs)</button><button data-act="track" data-v="quick" aria-pressed="${S.track === 'quick'}">Quick track (4 labs)</button></span></div>
+    <div style="margin-top:14px"><div class="pbar" aria-hidden="true"><i style="width:${Math.round(doneCount() / L.length * 100)}%"></i></div><p class="muted">${doneCount()} of ${L.length} labs completed</p></div>
+    <div class="labs">${L.map((l, n) => { const r = S.labs[l.id]; return `<div class="lc${r && r.done ? ' done' : ''}"><span class="ic" aria-hidden="true">${l.icon}</span><h3>Lab ${n + 1}: ${l.name}</h3><p class="muted">${l.blurb}</p><span class="st">${r && r.done ? '✔ Completed · ' + r.score + ' / 100' : 'Not started'}</span><button class="btn ${r && r.done ? '' : 'primary'}" data-act="open" data-id="${l.id}">${r && r.done ? 'Replay lab' : 'Start lab'}</button></div>`; }).join('')}</div>
+    <div class="row" style="margin-top:16px"><button class="btn primary" data-act="report">📊 My report${allDone() ? '' : ' (so far)'}</button><button class="btn danger" data-act="reset">Reset my progress</button></div></section>`);
+  hud(); focusMain();
+}
+
+/* ---------- lab runtime ---------- */
+let R = null;
+function leaveLab() { if (R) { (R.tm || []).forEach(clearTimeout); } R = null; }
+function later(fn, ms) { const id = setTimeout(fn, ms); R.tm.push(id); return id; }
+const fill = t => String(t).replace(/\{nick\}/g, esc(S.nick || 'Student'));
+function scrollLog() { const l = $('#log'); if (l) l.scrollTop = l.scrollHeight; }
+function msg(who, html, cls) {
+  const d = document.createElement('div'); d.className = 'm ' + who + (cls ? ' ' + cls : '');
+  d.innerHTML = (who === 'bot' ? '<span class="av" aria-hidden="true">🤖</span>' : '') + '<div class="b">' + html + '</div>';
+  $('#log').appendChild(d); scrollLog(); return d;
+}
+function botSay(html, cb) {
+  R.ready = false;
+  const d = msg('bot', '<span class="typing">typing…</span>');
+  const go = () => { if (!R) return; d.querySelector('.b').innerHTML = fill(html); scrollLog(); cb && cb(); };
+  if (reduce) go(); else later(go, Math.min(650, 180 + String(html).length * 2));
+}
+function setScreen(name) {
+  const f = R.lab.screens[name]; if (!f) return;
+  $('#gui').innerHTML = f(); $('#gtitle').textContent = R.lab.title;
+}
+function progress() {
+  const n = R.lab.steps.filter(s => s.k === 'task' || s.k === 'mcq').length, d = R.sum.n;
+  $('#pbar').style.width = Math.round(d / n * 100) + '%';
+}
+function openLab(id) {
+  leaveLab();
+  const lab = LABS.find(l => l.id === id); if (!lab) return;
+  R = {lab, i: 0, sum: {pts: 0, n: 0}, scored: lab.steps.filter(s => s.k === 'task' || s.k === 'mcq').length, tm: [], ready: false, cur: null, mist: 0, hint: false, got: new Set()};
+  view(`<section class="lab"><div class="card chat"><div class="chead"><div class="top"><b>🤖 TRAP-BOT · ${esc(lab.name)}</b><span id="phase"></span></div><div class="pbar" aria-hidden="true"><i id="pbar"></i></div></div><div id="log" role="log" aria-live="polite"></div><div id="ctrl"></div></div>
+    <div class="card guiw"><div class="gbar"><span aria-hidden="true">● ● ●</span><b id="gtitle"></b><em>SIMULATED</em></div><div id="gui"></div></div></section>`);
+  hud(); focusMain();
+  step();
+}
+function setCtrl(html) { $('#ctrl').innerHTML = html; }
+const contBtn = lbl => '<button class="btn primary" data-act="next" data-next>' + (lbl || 'Continue ▸') + '</button> <small class="muted">(press N)</small>';
+function step() {
+  if (!R) return;
+  const s = R.lab.steps[R.i]; if (!s) return finishLab();
+  R.cur = s; R.mist = 0; R.hint = false; R.got = new Set(); R.ready = false; setCtrl('');
+  if (s.screen) setScreen(s.screen);
+  switch (s.k) {
+    case 'ph': $('#phase').textContent = s.t; msg('div', ''); { const d = $('#log').lastChild; d.className = 'div'; d.textContent = s.t; } R.i++; return step();
+    case 'say': return botSay(s.t, () => { R.i++; step(); });
+    case 'task': return botSay(s.t, () => { R.ready = true; setCtrl('<button class="btn sm" data-act="hint">💡 Hint</button>'); });
+    case 'mcq': return botSay('<b>Question:</b> ' + s.q, () => {
+      R.ready = true;
+      setCtrl(s.opts.map((o, k) => '<button class="opt" data-act="opt" data-k="' + k + '"><kbd>' + (k + 1) + '</kbd><span>' + o + '</span></button>').join('') + '<button class="btn sm" data-act="hint">💡 Hint</button>');
+    });
+    case 'atk': return showAtk(s);
+  }
+}
+function showAtk(s) {
+  const d = msg('bot', '<div class="atk"><div class="simb">⚠ SIMULATION - concept-level attacker view. No real tools, code or commands.</div><b>' + s.title + '</b><div class="term" aria-label="Simulated attacker notes"></div></div>');
+  const t = d.querySelector('.term'); let i = 0;
+  const finish = () => { setCtrl(contBtn()); const n = $('#ctrl [data-next]'); if (n) n.focus({preventScroll: true}); };
+  const add = () => {
+    if (!R) return;
+    if (i >= s.lines.length) return finish();
+    const l = document.createElement('div'); l.textContent = s.lines[i++]; t.appendChild(l); scrollLog();
+    if (reduce || R.skip) add(); else later(add, 450);
+  };
+  R.skip = false; setCtrl('<button class="btn sm" data-act="skip">⏩ Skip animation</button>'); add();
+}
+function credit() { return (R.hint || R.mist >= 1) ? 0.5 : 1; }
+function finishStep(c) {
+  R.sum.pts += c; R.sum.n++; progress(); R.ready = false;
+  setCtrl(contBtn()); const n = $('#ctrl [data-next]'); if (n) n.focus({preventScroll: true});
+}
+function guiClick(el) {
+  const s = R && R.cur; if (!s || s.k !== 'task' || !R.ready) return;
+  const id = el.dataset.t; if (R.got.has(id)) return;
+  const inf = s.info && s.info[id];
+  msg('you', 'Clicked: ' + esc(el.textContent.trim().slice(0, 60) || id));
+  if (s.target.includes(id)) {
+    R.got.add(id); el.classList.add('ok');
+    msg('bot', '✔ ' + (inf || 'Correct.'), 'good');
+    if (s.target.every(t => R.got.has(t))) finishStep(credit());
+    else msg('bot', 'Good. ' + (s.target.length - R.got.size) + ' more to find.');
+  } else {
+    R.mist++; el.classList.add('bad'); later(() => el.classList.remove('bad'), 800);
+    msg('bot', '✖ ' + (inf || 'Not that one. Look again.'), 'bad');
+    if (R.mist >= 2) {
+      s.target.forEach(t => { if (!R.got.has(t)) { const e = $('#gui [data-t="' + t + '"]'); if (e) e.classList.add('reveal'); R.got.add(t); } });
+      msg('bot', 'Here is the answer: the highlighted item' + (s.target.length > 1 ? 's' : '') + '. You get no points for this one, but now you know.');
+      finishStep(0);
+    }
+  }
+}
+function optClick(el) {
+  const s = R && R.cur; if (!s || s.k !== 'mcq' || !R.ready) return;
+  const k = +el.dataset.k;
+  msg('you', esc(el.querySelector('span') ? el.querySelector('span').textContent : ''));
+  if (k === s.a) {
+    el.classList.add('good'); $$('#ctrl .opt').forEach(b => { b.disabled = true; });
+    msg('bot', '✔ Correct. ' + s.why, 'good'); finishStep(credit());
+  } else {
+    R.mist++; el.classList.add('bad'); el.disabled = true;
+    if (R.mist >= 2) {
+      $$('#ctrl .opt').forEach(b => { b.disabled = true; if (+b.dataset.k === s.a) b.classList.add('good'); });
+      msg('bot', '✖ Not quite. The best answer was: <b>' + s.opts[s.a] + '</b>. ' + s.why, 'bad'); finishStep(0);
+    } else msg('bot', '✖ Not quite. Think again. Use the hint if you like.', 'bad');
+  }
+}
+function hintClick() {
+  const s = R && R.cur; if (!s || !R.ready) return;
+  R.hint = true; msg('bot', '💡 ' + (s.hint || 'Eliminate options that ask you to hurry, trust something unverified, or skip verification.'));
+}
+function finishLab() {
+  const sc = Math.round(R.sum.pts / R.scored * 100), lab = R.lab;
+  S.labs[lab.id] = {score: sc, done: true}; S.saved = false; save(); hud();
+  const idx = activeLabs().findIndex(l => l.id === lab.id), nxt = activeLabs().find((l, n) => n > idx && !(S.labs[l.id] && S.labs[l.id].done));
+  msg('bot', '🏁 <b>Lab complete: ' + sc + ' / 100</b><br>Remember:<ul>' + lab.sum.map(x => '<li>' + x + '</li>').join('') + '</ul>', 'good');
+  setCtrl('<div class="row">' + (nxt ? '<button class="btn primary" data-act="open" data-id="' + nxt.id + '">Next lab: ' + nxt.name + ' ▸</button>' : '<button class="btn primary" data-act="report">📊 See my report</button>') + '<button class="btn" data-act="home">Mission map</button></div>');
+  $('#pbar').style.width = '100%';
+  const b = $('#ctrl .btn'); if (b) b.focus({preventScroll: true});
+}
+
+/* ---------- report, leaderboard, certificate ---------- */
+function rReport() {
+  leaveLab();
+  const L = activeLabs(), ov = overall(), r = rankOf(ov), fin = allDone();
+  if (fin && !S.saved) { S.saved = true; save(); const lb = loadLB(); lb.push({name: S.nick || 'Student', score: ov, rank: r, date: new Date().toISOString(), t: Date.now()}); sset(LBKEY, lb.slice(-200)); }
+  const lb = loadLB().sort((a, b) => b.score - a.score || a.t - b.t).slice(0, 10);
+  const weak = L.filter(l => S.labs[l.id] && S.labs[l.id].done && S.labs[l.id].score < 70);
+  const undone = L.filter(l => !(S.labs[l.id] && S.labs[l.id].done));
+  view(`<section class="card"><p class="tag">Lab report</p><h1>${esc(S.nick || 'Student')}, here is your report</h1>
+    <div class="two"><div><p class="muted">OVERALL (average across ${L.length} labs)</p><div class="big">${ov}<small style="font-size:1.1rem;color:var(--mut)"> / 100</small></div><p><span class="badge">${r}</span> ${fin ? '' : '<small class="muted">(provisional - finish all labs)</small>'}</p>
+      <table><thead><tr><th>Lab</th><th>Score</th></tr></thead><tbody>${L.map(l => `<tr><td>${l.icon} ${l.name}</td><td>${S.labs[l.id] && S.labs[l.id].done ? S.labs[l.id].score + ' / 100' : '-'}</td></tr>`).join('')}</tbody></table>
+      <p class="muted">Scoring: first-try correct = full marks for a step, correct with a hint or a mistake = half, answer revealed = zero.</p></div>
+    <div><h3>What to revise</h3>${undone.length ? '<p>Not started: ' + undone.map(l => esc(l.name)).join(', ') + '.</p>' : ''}${weak.length ? '<p>Replay these (below 70): ' + weak.map(l => esc(l.name)).join(', ') + '.</p>' : (undone.length ? '' : '<p>Nothing below 70. Strong work!</p>')}
+      <h3>Offline leaderboard (this computer)</h3>${lb.length ? '<table><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Rank</th></tr></thead><tbody>' + lb.map((e, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(e.name) + '</td><td>' + esc(e.score) + '</td><td>' + esc(e.rank) + '</td></tr>').join('') + '</tbody></table>' : '<p class="muted">No entries yet. Finish every lab to appear here.</p>'}
+      <p class="muted">🔒 Nicknames and scores stay in this browser only. Nothing is sent anywhere.</p></div></div>
+    <div class="row"><button class="btn primary" data-act="cert">🎓 Certificate</button><button class="btn" data-act="home">Mission map</button><button class="btn danger" data-act="clearlb">Clear leaderboard</button></div></section>`);
+  hud(); focusMain();
+}
+function rCert() {
+  const ov = overall(), r = rankOf(ov);
+  view(`<section class="card"><div class="cert" id="cert" role="group" aria-label="Certificate"><h2>CYBER LAB COMPLETION CERTIFICATE</h2><p>This certifies that</p><div class="nm" id="certName"></div><p>completed the <b>TRUST TRAP LAB</b> guided cyber awareness labs<br>with an overall score of <b>${ov} / 100</b> and the rank</p><h2>${esc(r.toUpperCase())}</h2><p>Date: <b>${esc(new Date().toLocaleDateString())}</b></p><p style="font-size:.85rem">Awarded for learning and practice - not a security certification or qualification.</p></div>
+    <div class="row" style="margin-top:12px;justify-content:center"><button class="btn primary" data-act="print">🖨 Print / Save as PDF</button><button class="btn" data-act="report">← Back</button></div></section>`);
+  $('#certName').textContent = S.nick || 'Student'; hud(); focusMain();
+}
+
+/* ---------- actions ---------- */
+const ACT = {
+  home() { rHome(); },
+  track(el) { const v = el.dataset.v === 'quick' ? 'quick' : 'full'; const nk = $('#nick'); if (nk) S.nick = cleanNick(nk.value); S.track = v; save(); rHome(); },
+  open(el) { const nk = $('#nick'); if (nk) S.nick = cleanNick(nk.value); S.nick = S.nick || 'Student'; save(); openLab(el.dataset.id); },
+  next() { if (!R) return; R.i++; step(); },
+  hint() { hintClick(); },
+  opt(el) { optClick(el); },
+  skip() { if (R) R.skip = true; const t = $('#ctrl .btn'); if (t) t.disabled = true; },
+  report() { rReport(); },
+  cert() { if (!allDone()) { toast('Finish every lab in your track to unlock the certificate.'); return; } rCert(); },
+  print() { try { window.print(); } catch (e) { toast('Printing is not available. Use Ctrl+P.'); } },
+  reset() { if (!window.confirm('Reset all your lab progress on this computer?')) return; S.labs = {}; S.saved = false; save(); toast('Progress reset.'); rHome(); },
+  clearlb() { if (window.confirm('Delete ALL leaderboard entries on this computer?')) { sset(LBKEY, []); rReport(); toast('Leaderboard cleared.'); } }
+};
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-t]');
+  if (t && $('#gui') && $('#gui').contains(t)) { guiClick(t); return; }
+  const a = e.target.closest('[data-act]');
+  if (a && !a.disabled) { try { ACT[a.dataset.act] && ACT[a.dataset.act](a); } catch (err) { console.error(err); toast('Error: ' + err.message, 8000); } }
+});
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const t = e.target || {};
+  if (t.tagName === 'INPUT') { if (e.key === 'Enter' && t.id === 'nick') { e.preventDefault(); const first = LABS.find(l => activeLabs().includes(l) && !(S.labs[l.id] && S.labs[l.id].done)) || activeLabs()[0]; ACT.open({dataset: {id: first.id}}); } return; }
+  if (/^[1-9]$/.test(e.key)) { const o = $$('#ctrl .opt:not(:disabled)')[+e.key - 1]; if (o) { e.preventDefault(); o.click(); } }
+  else if (e.key === 'n' || e.key === 'N') { const n = $('#ctrl [data-next]'); if (n) n.click(); }
+});
+window.addEventListener('error', ev => toast('Error: ' + ev.message + ' (line ' + ev.lineno + ')', 10000));
+window.TT_LABS = LABS;   // exposed so teachers/testers can read lab content
+rHome();
+})();
+</script>
+</body>
+</html>
